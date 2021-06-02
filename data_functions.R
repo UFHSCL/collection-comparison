@@ -1,8 +1,9 @@
 library(tidyverse)
 library(googlesheets4)
 
-process_raw_data <- function(dat)
+process_raw_data <- function(file_in = "raw_data.RDS")
 {
+    dat <- readRDS(file_in)
     school_data <- extract_school_data(dat)
     extract_collections_data(dat, school_data)
 }
@@ -35,10 +36,15 @@ extract_collections_data <- function(dat, school_data)
         filter(!is.na(`Resource Title`)) %>%
         select(!one_of("TOTAL FL", "TOTAL US NEWS PEERS", "How many peers have this resource?")) %>%
         rename("type" = `...2`, 
-               "Publisher/Vendor" = "Publisher/Vendor (if unknown, please leave blank)") %>%
+               "Publisher/Vendor" = "Publisher/Vendor (if unknown, please leave blank)", 
+               "onetime_purchase" = "one-time purchase OR ongoing subscription", 
+               "resource" = "Resource Title", 
+               "liaison_priority" = "Liaison Priority Ranking") %>%
+        mutate(onetime_purchase = !is.na(onetime_purchase)) %>%
         pivot_longer(7:19, "school") %>%
         filter(value != 0) %>%
         select(!one_of("value")) %>%
         janitor::clean_names() %>%
+        replace_na(list(liaison_priority = Inf)) %>%
         left_join(school_data)
 }

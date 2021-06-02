@@ -2,34 +2,50 @@
 title: "HSCL Peer Institution Collection Comparison"
 output: 
   flexdashboard::flex_dashboard:
+    orientation: columns
+    theme: flatly
+    social: menu
     source_code: https://github.com/ufhscl/collection-comparison/dashboard.Rmd
 ---
 
 ```{r setup, include = FALSE}
 library(highcharter)
 library(tidyverse)
+library(DT)
 
 collections_data <- readRDS("collections_data.Rdata")
 ```
 
-### Resources by Peer Institution
-
 ```{r}
-resource_order <- collections_data %>% 
-  count(resource_title) %>%
+rank_data <- collections_data %>% 
+  count(resource) %>%
   arrange(desc(n)) %>%
   mutate(rank = row_number()) %>%
   select(!n)
 
-school_count <- collections_data %>%
-    count(resource_title, region) %>%
-    complete(resource_title, region, fill = list(n = 0)) %>%
-    mutate(resource_title = factor(resource_title, 
-                                   levels = resource_order$resource_title)) %>%
-    left_join(resource_order) %>%
+summary_count <- collections_data %>%
+    count(resource, region) %>%
+    complete(resource, region, fill = list(n = 0)) %>%
+    left_join(rank_data) %>%
     arrange(rank)
 
-hchart(school_count, "bar", hcaes(x = resource_title, y = n, 
+resource_data <- collections_data %>%
+  select(!one_of("school", "code", "region")) %>%
+  distinct()
+```
+
+
+
+Resources (most owned by peers)
+===================================== 
+
+Column {data-width=800}
+-----------------------------------------------------------------------
+
+### Resources by Peer Institution
+
+```{r}
+hchart(summary_count, "bar", hcaes(x = resource, y = n, 
                                   group = region)) %>%
     hc_plotOptions(series = list(
         stacking = "normal")
@@ -41,4 +57,27 @@ hchart(school_count, "bar", hcaes(x = resource_title, y = n,
         text = "Number of Peer Institutions")
     )
 ```
+
+
+Data 
+===================================== 
+
+Column {data-width=800}
+-----------------------------------------------------------------------
+
+```{r}
+resource_info <- summary_count %>%
+  pivot_wider(names_from = region, values_from = n) %>%
+  left_join(resource_data) %>%
+  mutate("Total peers with" = Florida + US, 
+         "Florida peers with" = Florida, 
+         "US peers with" = US) %>%
+  select(!one_of("Florida", "US", "rank")) %>%
+  select(resource, "Total peers with", "Florida peers with", "US peers with", everything())
+
+datatable(resource_info, 
+          options = list(pageLength = 53, 
+                         scrollY = "800px"))
+```
+
 
