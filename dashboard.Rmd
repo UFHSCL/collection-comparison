@@ -1,0 +1,26 @@
+---
+title: "HSCL Peer Institution Collection Comparison"
+output: 
+  flexdashboard::flex_dashboard:
+    source_code: https://github.com/ufhscl/collection-comparison/dashboard.Rmd
+---
+
+```{r setup, include = FALSE}
+library(highcharter)
+library(tidyverse)
+
+collections_data <- readRDS("collections_data.Rdata")
+```
+    
+### Resources by Peer Institution
+    
+```{r}
+school_count <- collections_data %>%
+    count(resource_title, region) %>%
+    complete(resource_title, region, fill = list(n = 0))
+
+hchart(school_count, "column", hcaes(x = resource_title, y = n, color = region)) %>%
+    hc_plotOptions(series = list(
+        stacking = "normal")
+    )
+```
