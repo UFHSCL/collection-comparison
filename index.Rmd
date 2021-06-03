@@ -5,7 +5,7 @@ output:
     orientation: columns
     theme: spacelab
     social: menu
-    source_code: https://github.com/ufhscl/collection-comparison/dashboard.Rmd
+    source_code: https://github.com/ufhscl/collection-comparison/index.Rmd
 ---
 
 ```{r setup, include = FALSE}
