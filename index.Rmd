@@ -3,7 +3,7 @@ title: "HSCL Peer Institution Collection Comparison"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
-    theme: flatly
+    theme: spacelab
     social: menu
     source_code: https://github.com/ufhscl/collection-comparison/dashboard.Rmd
 ---
@@ -32,6 +32,23 @@ summary_count <- collections_data %>%
 resource_data <- collections_data %>%
   select(!one_of("school", "code", "region")) %>%
   distinct()
+
+peer_data <- collections_data %>%
+  group_by(school) %>%
+  summarize(num_resources = n(), 
+            resources = list(resource)) %>%
+  left_join(distinct(select(collections_data, school, region))) %>%
+  select(school, region, num_resources, resources) %>%
+  arrange(desc(num_resources))
+
+resource_info <- summary_count %>%
+  pivot_wider(names_from = region, values_from = n) %>%
+  left_join(resource_data) %>%
+  mutate("Total peers with" = Florida + US, 
+         "Florida peers with" = Florida, 
+         "US peers with" = US) %>%
+  select(!one_of("Florida", "US", "rank")) %>%
+  select(resource, "Total peers with", "Florida peers with", "US peers with", everything())
 ```
 
 
@@ -58,25 +75,31 @@ hchart(summary_count, "bar", hcaes(x = resource, y = n,
     )
 ```
 
+Peer Data
+=====================================
 
-Data 
+Column {data-width=800}
+-----------------------------------------------------------------------
+
+```{r}
+datatable(peer_data, 
+          rownames = FALSE, 
+          options = list(pageLength = NROW(peer_data), 
+                         scrollY = "800px"))
+```
+
+
+
+Resource Data 
 ===================================== 
 
 Column {data-width=800}
 -----------------------------------------------------------------------
 
 ```{r}
-resource_info <- summary_count %>%
-  pivot_wider(names_from = region, values_from = n) %>%
-  left_join(resource_data) %>%
-  mutate("Total peers with" = Florida + US, 
-         "Florida peers with" = Florida, 
-         "US peers with" = US) %>%
-  select(!one_of("Florida", "US", "rank")) %>%
-  select(resource, "Total peers with", "Florida peers with", "US peers with", everything())
-
 datatable(resource_info, 
-          options = list(pageLength = 53, 
+          rownames = FALSE, 
+          options = list(pageLength = NROW(resource_info), 
                          scrollY = "800px"))
 ```
 
