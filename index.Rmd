@@ -29,6 +29,12 @@ summary_count <- collections_data %>%
     left_join(rank_data) %>%
     arrange(rank)
 
+summary_florida <- collections_data %>%
+  filter(region == "Florida") %>%
+  count(resource) %>%
+  left_join(rank_data) %>%
+  arrange(desc(n))
+
 resource_data <- collections_data %>%
   select(!one_of("school", "code", "region")) %>%
   distinct()
@@ -59,11 +65,42 @@ Resources (most owned by peers)
 Column {data-width=800}
 -----------------------------------------------------------------------
 
+# TODO
+# Re-organize plots into the following tabs
+# - tab for Florida peers (without backfiles)
+# - tab for US peers (without backfiles)
+# - all peers (without backfiles)
+# - all peers, all resources
+#
+# Check for display of names (currently showing all bars, but labels are cut off)
+# - using different plotting interface (hover-over annotation?)
+
 ### Resources by Peer Institution
 
 ```{r}
 hchart(summary_count, "bar", hcaes(x = resource, y = n, 
                                   group = region)) %>%
+    hc_plotOptions(series = list(
+        stacking = "normal")
+    ) %>%
+    hc_xAxis(title = list(
+        text = "Resource")
+    ) %>%
+    hc_yAxis(title = list(
+        text = "Number of Peer Institutions")
+    )
+```
+
+Resources (Florida-only)
+===================================== 
+
+Column {data-width=800}
+-----------------------------------------------------------------------
+
+### Resources by Peer Institution
+
+```{r}
+hchart(summary_florida, "bar", hcaes(x = resource, y = n)) %>%
     hc_plotOptions(series = list(
         stacking = "normal")
     ) %>%
