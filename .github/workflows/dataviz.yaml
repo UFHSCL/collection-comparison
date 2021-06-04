@@ -36,6 +36,7 @@ jobs:
 
       - name: Build site
         run: |
+          DATA_URL <- ${{ secrets.DATA_URL }}
           source("get_data.R")
           rmd_files <- list.files(pattern = ".Rmd$")
           purrr::walk(rmd_files, rmarkdown::render)

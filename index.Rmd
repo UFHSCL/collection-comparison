@@ -11,7 +11,6 @@ output:
 
 ```{r setup, include = FALSE}
 library(tidyverse)
-library(highcharter)
 library(plotly)
 library(DT)
 
