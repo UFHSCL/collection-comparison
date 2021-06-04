@@ -1,22 +1,27 @@
 ---
-title: "HSCL Peer Institution Collection Comparison"
+title: "HSCL Collections vs. Peer Institutions"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
+    vertical_layout: fill
     theme: spacelab
     social: menu
     source_code: https://github.com/ufhscl/collection-comparison/index.Rmd
 ---
 
 ```{r setup, include = FALSE}
-library(highcharter)
 library(tidyverse)
+library(plotly)
 library(DT)
 
 collections_data <- readRDS("collections_data.Rdata")
 ```
 
 ```{r}
+resource_data <- collections_data %>%
+  select(!one_of("school", "code", "region")) %>%
+  distinct()
+
 rank_data <- collections_data %>% 
   count(resource) %>%
   arrange(desc(n)) %>%
@@ -24,14 +29,11 @@ rank_data <- collections_data %>%
   select(!n)
 
 summary_count <- collections_data %>%
-    count(resource, region) %>%
-    complete(resource, region, fill = list(n = 0)) %>%
-    left_join(rank_data) %>%
-    arrange(rank)
-
-resource_data <- collections_data %>%
-  select(!one_of("school", "code", "region")) %>%
-  distinct()
+  count(resource, region) %>%
+  complete(resource, region, fill = list(n = 0)) %>%
+  left_join(rank_data) %>%
+  arrange(rank) %>%
+  left_join(resource_data)
 
 peer_data <- collections_data %>%
   group_by(school) %>%
@@ -49,33 +51,83 @@ resource_info <- summary_count %>%
          "US peers with" = US) %>%
   select(!one_of("Florida", "US", "rank")) %>%
   select(resource, "Total peers with", "Florida peers with", "US peers with", everything())
+
+backfiles <- resource_info %>%
+  filter(onetime_purchase) %>%
+  pull(resource)
+
 ```
 
-
-
-Resources (most owned by peers)
+Visualizations
 ===================================== 
 
-Column {data-width=800}
------------------------------------------------------------------------
+Column {.tabset .storyboard}
+-------------------------------------
 
-### Resources by Peer Institution
+### Florida Peers (no backfiles)
 
 ```{r}
-hchart(summary_count, "bar", hcaes(x = resource, y = n, 
-                                  group = region)) %>%
-    hc_plotOptions(series = list(
-        stacking = "normal")
-    ) %>%
-    hc_xAxis(title = list(
-        text = "Resource")
-    ) %>%
-    hc_yAxis(title = list(
-        text = "Number of Peer Institutions")
-    )
+to_plot <- summary_count %>%
+  filter(region == "Florida", 
+         !resource %in% backfiles)
+
+p <- ggplot(to_plot, 
+            aes(x = n, y = reorder(resource, n), fill = type)) + 
+  geom_col() + 
+  scale_x_continuous(breaks = seq(0, max(resource_info$`Total peers with`), by = 2)) + 
+  theme_bw() + 
+  labs(x = "# of Peer Institutions", y = "Resource Name")
+
+ggplotly(p)
+```   
+
+### US Peers (no backfiles)
+
+```{r}
+to_plot <- summary_count %>%
+  filter(region == "US", 
+         !resource %in% backfiles)
+
+p <- ggplot(to_plot, 
+            aes(x = n, y = reorder(resource, n), fill = type)) + 
+  geom_col() + 
+  scale_x_continuous(breaks = seq(0, max(resource_info$`Total peers with`), by = 2)) + 
+  theme_bw() + 
+  labs(x = "# of Peer Institutions", y = "Resource Name")
+
+ggplotly(p)
 ```
 
-Peer Data
+### All Peers (no backfiles)
+
+```{r}
+to_plot <- summary_count %>%
+  filter(!resource %in% backfiles)
+
+p <- ggplot(to_plot, 
+            aes(x = n, y = reorder(resource, n), fill = type)) + 
+  geom_col() + 
+  scale_x_continuous(breaks = seq(0, max(resource_info$`Total peers with`), by = 2)) + 
+  theme_bw() + 
+  labs(x = "# of Peer Institutions", y = "Resource Name")
+
+ggplotly(p)
+```
+
+### All Peers (inc. backfiles)
+
+```{r}
+p <- ggplot(summary_count, 
+            aes(x = n, y = reorder(resource, n), fill = type)) + 
+  geom_col() + 
+  scale_x_continuous(breaks = seq(0, max(resource_info$`Total peers with`), by = 2)) + 
+  theme_bw() + 
+  labs(x = "# of Peer Institutions", y = "Resource Name")
+
+ggplotly(p)
+```
+
+Peer Institution Data {data-navmenu="Data Tables"}
 =====================================
 
 Column {data-width=800}
@@ -90,7 +142,7 @@ datatable(peer_data,
 
 
 
-Resource Data 
+Resource Data {data-navmenu="Data Tables"}
 ===================================== 
 
 Column {data-width=800}

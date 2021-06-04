@@ -8,11 +8,10 @@ process_raw_data <- function(file_in = "raw_data.RDS")
     extract_collections_data(dat, school_data)
 }
 
-download_raw_data <- function(file_out = "raw_data.RDS")
+download_raw_data <- function(DATA_URL, file_out = "raw_data.RDS")
 {
     gs4_deauth() # skip using authentication (since we are accessing a public sheet)
-    dat <- read_sheet("https://docs.google.com/spreadsheets/d/1kylnWMLooqv3C_tRsUezUyQOxTHw1WgFXA-KdkMgKw0/edit?usp=sharing", 
-                      col_types = "c")
+    dat <- read_sheet(DATA_URL, col_types = "c")
     saveRDS(dat, file_out)
 }
 
@@ -45,6 +44,7 @@ extract_collections_data <- function(dat, school_data)
         filter(value != 0) %>%
         select(!one_of("value")) %>%
         janitor::clean_names() %>%
-        replace_na(list(liaison_priority = Inf)) %>%
-        left_join(school_data)
+        left_join(school_data) %>%
+        mutate(resource = gsub(" http[s]:[a-zA-Z0-9/\\.]+", "", resource), 
+               resource = gsub("online resource", "online", resource))
 }
