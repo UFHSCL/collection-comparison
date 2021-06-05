@@ -6,7 +6,7 @@ output:
     vertical_layout: fill
     theme: spacelab
     social: menu
-    source_code: https://github.com/ufhscl/collection-comparison/index.Rmd
+    source_code: https://github.com/UFHSCL/collection-comparison/blob/main/index.Rmd
 ---
 
 ```{r setup, include = FALSE}
